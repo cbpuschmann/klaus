@@ -1,0 +1,27 @@
+Package: klaus
+Type: Package
+Title: A light-weight package for LLM-based content analysis
+Version: 0.1.0
+Authors@R: c(
+    person(
+      "Puschmann", "Cornelius",
+      email = "puschmann@uni-bremen.de",
+      role = c("aut", "cre")
+    )
+  )
+Description: Provides tools to facilitate automated text classification and
+    content analysis using the Chat AI API
+    (<https://chat-ai.academiccloud.de>). Includes functions for API
+    interaction, codebook parsing from CSV, and batch processing of text
+    data according to specified coding schemes.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Imports:
+    dplyr,
+    httr,
+    jsonlite,
+    purrr,
+    glue,
+    readr,
+    stringr
