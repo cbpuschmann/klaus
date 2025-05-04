@@ -1,7 +1,7 @@
 # klaus
  A light-weight R package for LLM-based content analysis
 
-![klaus](logo.png?raw=true "klaus")
+![klaus](logo_black.png?raw=true "klaus")
 
 Modern large language models offer considerable advantages for standardized content analysis. 
 klaus facilitates use of both proprietary and open source LLMs by offering a simple structure through which to
