@@ -1,4 +1,7 @@
-# Generic function for interacting with the ChatAI API
+# klaus.R
+
+
+# 1) Generic function for interacting with the ChatAI API
 chatai <- function(x = "",
                    system_prompt = "You are a helpful assistant",
                    model = "meta-llama-3.1-8b-instruct",
@@ -89,7 +92,8 @@ chatai <- function(x = "",
   return(content_out)
 }
 
-# Function to list the available models
+
+# 2) Function to list the available ChatAI API models
 chatai_models <- function() {
   # --- API Key ---
   api_key <- Sys.getenv("chatai_key")
@@ -148,22 +152,15 @@ chatai_models <- function() {
   return(response_parsed$data)
 }
 
-# Helper function to convert a CSV file to JSON to illustrate categories and desired structure to the LLM
-parse_codebook <- function(filepath) {
-  stopifnot(is.character(filepath), length(filepath) == 1)
-  df <- tryCatch(
-    readr::read_csv(filepath, show_col_types = FALSE),
-    error = function(e) {
-      # Stop execution with an informative error if file reading fails
-      stop(paste("Failed to read CSV file:", filepath, "\nOriginal error:", conditionMessage(e)), call. = FALSE)
-    }
-  )
+
+# 3) Helper function to convert a CSV file codebook to JSON to explain coding to the LLM
+parse_codebook <- function(x) {
   required_cols <- c("category", "label", "instructions")
-  if (!all(required_cols %in% names(df))) {
-    missing_cols <- setdiff(required_cols, names(df))
+  if (!all(required_cols %in% names(x))) {
+    missing_cols <- setdiff(required_cols, names(x))
     stop(paste("CSV must contain 'category', 'label', and 'instructions' columns. Missing:", paste(missing_cols, collapse=", ")), call. = FALSE)
   }
-  df_cleaned <- df %>%
+  df_cleaned <- x %>%
     dplyr::filter(!is.na(category))
   if (nrow(df_cleaned) == 0) {
     stop("No valid 'category' entries found after removing rows with NA category.", call. = FALSE)
@@ -175,184 +172,225 @@ parse_codebook <- function(filepath) {
       dplyr::filter(category == cat_name) %>%
       dplyr::summarise(
         label = list(label),          # Collect labels into a list
-        instructions = list(instructions), # Collect instructions into a list
         .groups = 'drop'              # Drop grouping structure after summarise
       )
     output_list[[cat_name]] <- list(
-      label = summary_data$label[[1]],
-      instructions = summary_data$instructions[[1]]
+      label = summary_data$label[[1]]
     )
   }
   json_output <- jsonlite::toJSON(output_list, auto_unbox = TRUE, pretty = TRUE)
   return(invisible(json_output))
 }
 
-# Main function to code content
+
+# 4) Internal function to call different LLM APIs
+.call_llm <- function(provider, model, user_prompt, system_prompt, temperature) {
+  providers_tidyllm <- c("claude", "gemini", "openai", "ollama")
+  if (provider == "chatai") {
+    if (is.null(model)) model <- "meta-llama-3.1-8b-instruct"
+    response <- tryCatch({
+      chatai(
+        x = user_prompt,
+        system_prompt = system_prompt,
+        model = model, 
+        temperature = temperature
+      )
+    },
+    error = function(e) {
+      stop(glue::glue("chatai API call failed for model '{model}': {conditionMessage(e)}"), call. = FALSE)
+    }
+    )
+    message(glue::glue("Coding data with {provider} / {model}..."))
+    return(response)
+    
+  } else if (provider %in% providers_tidyllm) {
+    if (provider == "claude") {
+      if (is.null(model)) model <- "claude-3-7-sonnet-20250219"
+      response <- tryCatch({
+        tidyllm::llm_message(user_prompt, .system_prompt = system_prompt) |> tidyllm::chat(tidyllm::claude(), .temperature = temperature, .model = model) |> tidyllm::get_reply()
+      },
+      error = function(e) {
+        stop(glue::glue("Anthropic API call failed for model '{model}': {conditionMessage(e)}"), call. = FALSE)
+      }
+      )
+    }
+    if (provider == "gemini") {
+      if (is.null(model)) model <- "gemini-2.0-flash"
+      response <- tryCatch({
+        tidyllm::llm_message(user_prompt, .system_prompt = system_prompt) |> tidyllm::chat(tidyllm::gemini(), .temperature = temperature, .model = model) |> tidyllm::get_reply()
+      },
+      error = function(e) {
+        stop(glue::glue("Gemini API call failed for model '{model}': {conditionMessage(e)}"), call. = FALSE)
+      }
+      )
+    }
+    if (provider == "openai") {
+      if (is.null(model)) model <- "gpt-4o"
+      response <- tryCatch({
+        tidyllm::llm_message(user_prompt, .system_prompt = system_prompt) |> tidyllm::chat(tidyllm::openai(), .temperature = temperature, .model = model) |> tidyllm::get_reply()
+      },
+      error = function(e) {
+        stop(glue::glue("OpenAI API call failed for model '{model}': {conditionMessage(e)}"), call. = FALSE)
+      }
+      )
+    }
+    if (provider == "ollama") {
+      if (is.null(model)) model <- "gemma3"
+      response <- tryCatch({
+        tidyllm::llm_message(user_prompt, .system_prompt = system_prompt) |> tidyllm::chat(tidyllm::ollama(), .temperature = temperature, .model = model) |> tidyllm::get_reply()
+      },
+      error = function(e) {
+        stop(glue::glue("Ollama API call failed for model '{model}': {conditionMessage(e)}"), call. = FALSE)
+      }
+      )
+    }
+    if (is.null(response) || !is.character(response) || length(response) != 1) {
+      stop(glue::glue("Unexpected content structure in tidyllm response for model '{model}'. Expected a single character string."), call. = FALSE)
+    }
+    message(glue::glue("Coding data with {provider} / {model}..."))
+    return(response)
+  } else {
+    stop(glue::glue("Unsupported API provider specified: '{provider}'"), call. = FALSE)
+  }
+}
+
+
+# Main function for coding content
 code_content <- function(x,
                          general_instructions,
                          formatting_instructions, # Make sure this is complete!
                          codebook, # Assumes JSON string from parse_codebook
-                         model = "meta-llama-3.1-8b-instruct",
+                         provider = "openai",
+                         model = NULL, # Will set set to a default according to the provider
                          temperature = 0,
-                         sleep = 1,
-#                         multiple_labels = TRUE,
+                         sleep = 0,
                          drop_json = TRUE,
                          drop_instructions = TRUE,
                          keep_all_original_rows = TRUE) {
-
-  # --- Input Validation ---
-  stopifnot(
-    is.data.frame(x),
-    "text" %in% names(x),
-    is.character(x$text),
-    # Add a temporary ID column if it doesn't exist to ensure uniqueness
-    # Handle potential name clashes if user already has '.original_row_id'
-    !(".original_row_id" %in% names(x)),
-    is.character(general_instructions), length(general_instructions) == 1,
-    is.character(formatting_instructions), length(formatting_instructions) == 1,
-    is.character(codebook), length(codebook) == 1, jsonlite::validate(codebook), # Basic JSON check
-    is.character(model), length(model) == 1, nzchar(model),
-    is.numeric(temperature), length(temperature) == 1, temperature >= 0,
-    is.numeric(sleep), length(sleep) == 1, sleep >= 0,
-    is.logical(drop_json), length(drop_json) == 1,
-    is.logical(drop_instructions), length(drop_instructions) == 1,
-    is.logical(keep_all_original_rows), length(keep_all_original_rows) == 1
-  )
-
+  
+  # Check if provider is supported (can be expanded)
+  supported_providers <- c("chatai", "claude", "gemini", "openai", "ollama")
+  if (!(provider %in% supported_providers)) {
+    stop(glue::glue("Unsupported API provider: '{provider}'. Supported: {paste(supported_providers, collapse=', ')}"), call. = FALSE)
+  }
+  
   # --- Add original row identifier ---
   x <- dplyr::mutate(x, .original_row_id = dplyr::row_number())
-
-  system_prompt <- paste0(formatting_instructions, "\n\n", codebook)
+  
+  codebook_json <- parse_codebook(codebook)
+  system_prompt <- paste0(formatting_instructions, "\n\n", codebook_json)
+  specific_instructions <- paste0("\n\nCategory: ", codebook$category, "\nLabel: ", codebook$label, "\nInstructions: ", codebook$instructions, collapse = "")
   n_rows <- nrow(x)
-  # Pre-allocate list for results
-  api_results <- vector("list", n_rows)
-
-  message(glue::glue("Coding data with {model} ({n_rows} rows)"))
+  api_results <- vector("list", n_rows) # Pre-allocate list
+  
+  message(glue::glue("Coding data with {provider} ({n_rows} rows)"))
   message("Iterating over content...")
-
+  
   # --- Loop 1: API Calls ---
   for (i in 1:n_rows) {
-    user_prompt <- paste0(general_instructions, "\n\n----\n\n", x$text[i])
+    user_prompt <- paste0(
+      general_instructions,
+      specific_instructions,
+      "\n\n----\n\n", 
+      x$text[i]
+    )
+    # Use tryCatch around the internal helper call
     result <- tryCatch({
-      chatai(user_prompt,
-             system_prompt = system_prompt,
-             model = model,
-             temperature = temperature)
+      .call_llm( # Call the internal helper
+        provider = provider,
+        model = model,
+        user_prompt = user_prompt,
+        system_prompt = system_prompt,
+        temperature = temperature
+      )
     },
     error = function(e) {
+      # Catch errors from .call_llm (which includes specific API errors)
       warning(glue::glue("API call failed for row {i} (ID: {x$.original_row_id[i]}): {conditionMessage(e)}"), call. = FALSE)
-      return(NA_character_)
+      return(NA_character_) # Assign NA on error
     }
     )
     api_results[[i]] <- result
     message(glue::glue("Processed text {i} of {n_rows}"))
     if (sleep > 0) Sys.sleep(sleep)
   }
-
+  
+  # --- Process Results (Parsing Loop) ---
   message(glue::glue("Parsing JSON responses ({n_rows} rows)."))
-
-  # --- Process Results ---
-  # Use map to process each result
   parsed_list <- purrr::map(seq_along(api_results), function(j) {
-    # Get original ID for this row
     current_id <- x$.original_row_id[[j]]
-    raw_json <- api_results[[j]]
-
-    if (is.na(raw_json)) {
+    raw_response <- api_results[[j]] # This is now the text content from the LLM
+    
+    if (is.na(raw_response)) {
       return(NULL)
     }
-
-    # --- Add Cleaning Step ---
-    # Attempt to extract the first JSON object {...} or array [...]
-    # This handles leading/trailing text and markdown fences like ```json
-    json_content <- stringr::str_extract(raw_json, "\\{[\\s\\S]*\\}|\\[[\\s\\S]*\\]")
-
-    # Check if extraction was successful
+    
+    # --- JSON Cleaning Step ---
+    json_content <- stringr::str_extract(raw_response, "\\{[\\s\\S]*\\}|\\[[\\s\\S]*\\]")
     if (is.na(json_content)) {
-      warning(glue::glue("Could not extract JSON structure {{...}} or [...] from response for row {j} (ID: {current_id}). Skipping parsing. Raw content: {raw_json}"), call.=FALSE)
-      return(NULL) # Fail parsing for this row if no structure found
+      warning(glue::glue("Could not extract JSON structure {{...}} or [...] from response for row {j} (ID: {current_id}). Skipping parsing. Raw content: {raw_response}"), call.=FALSE)
+      return(NULL)
     }
     # --- End Cleaning Step ---
-
+    
     parsed_json <- tryCatch({
-      jsonlite::fromJSON(json_content)
+      jsonlite::fromJSON(json_content) # Parse extracted content
     }, error = function(e) {
-      warning(glue::glue("JSON parsing failed for row {j} (ID: {current_id}): {conditionMessage(e)} \nRaw content: {raw_json}"), call. = FALSE)
+      warning(glue::glue("JSON parsing failed for row {j} (ID: {current_id}): {conditionMessage(e)} \nAttempted to parse: '{json_content}'"), call. = FALSE)
       return(NULL)
     })
-
+    
     if (is.null(parsed_json)) {
       return(NULL)
     }
-
+    
+    # --- Flattening ---
     flattened_data <- tryCatch({
-      # Key change: Add the original row ID to the flattened data
       purrr::map_dfr(parsed_json, ~ .x, .id = "category") %>%
-        dplyr::mutate(.original_row_id = current_id) # Add ID here
+        dplyr::mutate(.original_row_id = current_id)
     }, error = function(e) {
       warning(glue::glue("Failed to flatten parsed JSON structure for row {j} (ID: {current_id}): {conditionMessage(e)}"), call. = FALSE)
       return(NULL)
     })
-
+    
     return(flattened_data)
-  })
-
-  # Combine only the non-NULL results from the list
-  valid_results <- dplyr::bind_rows(parsed_list) # bind_rows handles NULLs gracefully
-
-#  if (multiple_labels == FALSE) {
-#    # --- Add filtering step ---
-#    # Example: Keep only the first row encountered for each original ID
-#    if (any(duplicated(valid_results$.original_row_id))) {
-#      warning("Multiple categories per ID found after flattening. Keeping only the first row per original ID.", call. = FALSE)
-#      valid_results <- valid_results %>%
-#        dplyr::group_by(.original_row_id) %>%
-#        dplyr::slice_head(n = 1) %>% # Or slice(1), slice_min(order_by=...), etc.
-#        dplyr::ungroup()
-#    }
-#    # --- End filtering step ---
-#  }
-
+  }) # End purrr::map
+  
+  # --- Combine and Join Results ---
+  valid_results <- dplyr::bind_rows(parsed_list)
+  
   if (nrow(valid_results) == 0) {
     message("No rows were successfully processed and parsed.")
-    x$response_json <- unlist(api_results) # Add raw results if nothing parsed
-    x$.original_row_id <- NULL # remove temp id
+    x$response_raw <- unlist(api_results) # Add raw results if nothing parsed
+    x$.original_row_id <- NULL
     return(x)
   }
-
-  # --- Join results back to original data ---
+  
   if (keep_all_original_rows) {
-    # Keep all original rows, merging results where available (NA otherwise)
     data_coded <- dplyr::left_join(x, valid_results, by = ".original_row_id")
   } else {
-    # Keep only original rows for which results were successfully parsed
     data_coded <- dplyr::inner_join(x, valid_results, by = ".original_row_id")
   }
-
-  # Optional cleanup
+  
+  # --- Optional Cleanup ---
   if (drop_json) {
-    # We didn't explicitly add response_json column back during the join,
-    # but if it existed in original x, remove it if desired.
-    # Or add it first if needed: data_coded$response_json <- unlist(api_results)[data_coded$.original_row_id] ? Complex.
-    # Let's assume we don't have it unless added explicitly.
+    # We don't store the raw JSON by default anymore unless requested
   } else {
-    # If user wants to keep JSON, add it back based on original row ID
-    # Create a lookup tibble first
-    json_lookup <- dplyr::tibble(.original_row_id = x$.original_row_id, response_json = unlist(api_results))
-    data_coded <- dplyr::left_join(data_coded, json_lookup, by = ".original_row_id")
+    # Add raw response text back if requested
+    response_lookup <- dplyr::tibble(.original_row_id = x$.original_row_id, response_raw = unlist(api_results))
+    data_coded <- dplyr::left_join(data_coded, response_lookup, by = ".original_row_id")
   }
-
-
   if (drop_instructions && "instructions" %in% names(data_coded)) {
     data_coded$instructions <- NULL
   }
-
-  # Remove the temporary ID column
+  
+  # Remove temporary ID
   data_coded$.original_row_id <- NULL
-
-  # Re-evaluate if distinct is needed. Probably not.
+  
+  # Distinct call might still be needed if map_dfr creates duplicates somehow? Re-evaluate.
   data_coded <- dplyr::distinct(data_coded)
-
-  message(glue::glue("Done. Joined results for {nrow(data_coded)} parsed rows."))
+  
+  message(glue::glue("Done. Joined results for {nrow(valid_results)} parsed rows.")) # Note: nrow(valid_results) might differ from final nrow
   return(data_coded)
 }
+

@@ -24,4 +24,5 @@ Imports:
     purrr,
     glue,
     readr,
-    stringr
+    stringr,
+    tidyllm

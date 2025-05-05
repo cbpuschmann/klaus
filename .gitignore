@@ -49,4 +49,9 @@ po/*~
 # RStudio Connect folder
 rsconnect/
 
+# other stuff
 .DS_Store
+klaus_tests.R
+codebook_*.csv
+data_*.csv
+
