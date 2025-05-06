@@ -22,16 +22,16 @@ First, prepare the general and formatting instructions.
   
     formatting_instructions <- "Always return a single JSON object for each coded text with the category name as the key. The value should be an object containing a 'label' key and a single value among multiple options. Each JSON object should have the following structure:"
   
-Then load your data (or use the example below)
+Then load your data (or use the example below). The data must be a data frame or tibble with a column named 'text'.
 
     data_to_code <- data.frame(text = c("It is terrible what is happening to this country", 
                                       "The movie was awesome.", 
                                       "The stock market has falled dramatically because of the governments' ruinous fiscal policies", 
                                       "The situation has been calm following the recent local elections"))
   
-Prepare the codebook
+Prepare the codebook. The codebook should be a data frame or tibble with the columns 'category', 'label' and 'instructions'. 
 
-    codebook <- data.frame( category = c("sentiment", "sentiment", "sentiment"), label = c("positive", "negative", "neutral"), instructions = c( "Code this if the sentiment of the tweet is positive", "Code this if the sentiment of the tweet is negative", "Code this if the sentiment of the tweet is neutral"))
+    codebook <- data.frame(category = c("sentiment", "sentiment", "sentiment"), label = c("positive", "negative", "neutral"), instructions = c("Code this if the sentiment of the tweet is positive", "Code this if the sentiment of the tweet is negative", "Code this if the sentiment of the tweet is neutral"))
   
 Code the data (here with gpt-4o)
 
