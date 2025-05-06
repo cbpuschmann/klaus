@@ -21,7 +21,12 @@ use with the API call. Handles single or multiple categories.
 }
 \examples{
 \dontrun{
-codebook <- data.frame(category = c("sentiment", "sentiment", "sentiment"), label = c("positive", "negative", "neutral"), instructions = c("Code this if the sentiment of the tweet is positive", "Code this if the sentiment of the tweet is negative", "Code this if the sentiment of the tweet is neutral"))
+codebook <- data.frame(category = c("sentiment", "sentiment", "sentiment"), 
+                       label = c("positive", "negative", "neutral"), 
+                       instructions = c(
+                       "Code this if the sentiment of the tweet is positive", 
+                       "Code this if the sentiment of the tweet is negative", 
+                       "Code this if the sentiment of the tweet is neutral"))
 
 json_codebook <- parse_codebook("codebook_content")
 
