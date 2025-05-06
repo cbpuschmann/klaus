@@ -1,6 +1,6 @@
 # A light-weight R package for LLM-based content analysis
 
-![klaus](logo_black.png?raw=true "klaus")
+![klaus](logo.png?raw=true "klaus")
 
 Modern large language models offer considerable advantages for standardized content analysis. `klaus` facilitates use of both proprietary and open source LLMs by offering a simple interface through which to serve data and apply categorization. Presently the package supports the proprietary APIs of OpenAI, Anthropic and Google (through [tidyllm](https://cran.r-project.org/package=tidyllm)), as well as the non-commercial [ChatAI API](https://docs.hpc.gwdg.de/services/saia/index.html) service provided by [GWDG](https://gwdg.de/en/). 
 
