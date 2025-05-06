@@ -15,9 +15,9 @@ chatai <- function(x = "",
     is.character(model), length(model) == 1, nzchar(model),
     is.numeric(temperature), length(temperature) == 1, temperature >= 0
   )
-  api_key <- Sys.getenv("chatai_key")
+  api_key <- Sys.getenv("CHATAI_API_KEY")
   if (api_key == "") {
-    stop("API key not found. Please set the 'chatai_key' environment variable.", call. = FALSE)
+    stop("API key not found. Please set the 'CHATAI_API_KEY' environment variable.", call. = FALSE)
   }
   url <- "https://chat-ai.academiccloud.de/v1/chat/completions"
   headers <- c(
@@ -77,9 +77,9 @@ chatai <- function(x = "",
 # 2) List the available ChatAI API models
 
 chatai_models <- function() {
-  api_key <- Sys.getenv("chatai_key")
+  api_key <- Sys.getenv("CHATAI_API_KEY")
   if (api_key == "") {
-    stop("API key not found. Please set the 'chatai_key' environment variable.", call. = FALSE)
+    stop("API key not found. Please set the 'CHATAI_API_KEY' environment variable.", call. = FALSE)
   }
   url <- "https://chat-ai.academiccloud.de/v1/models"
   headers <- c(
