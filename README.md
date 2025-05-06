@@ -13,15 +13,45 @@ Modern large language models offer considerable advantages for standardized cont
 ## Usage
 
 The package's main function `code_content()` , takes general instructions, coding instructions and a codebook as its arguments.
+      
+    general_instructions <- "You are a highly accurate and consistent text classification model that specializes in analyzing English-language Twitter posts. Your task is to determine the sentiment of the tweet reproduced below. You must strictly follow the classification rules without deviation. Do not return any additional information outside the classification scheme. Use JSON."
   
-  general_instructions <- "You are a highly accurate and consistent text classification model that specializes in analyzing English-language Twitter posts. Your task is to determine the sentiment of the tweet reproduced below. You must strictly follow the classification rules without deviation. Do not return any additional information outside the classification scheme. Use JSON."
+    formatting_instructions <-  "Always return a single JSON object with the category name as the key for each coded text. The value should be an object containing a 'label' key and a single value among multiple options. Each JSON object should have the following structure:"
   
-  formatting_instructions <-  "Always return a single JSON object with the category name as the key for each coded text. The value should be an object containing a 'label' key and a single value among multiple options. Each JSON object should have the following structure:"
+    data_to_code <- data.frame(text = c("It is terrible what is happening to this country", 
+                                      "The movie was awesome.", 
+                                      "The stock market has falled dramatically because of the governments' ruinous fiscal policies", 
+                                      "The situation has been calm following the recent local elections"))
   
-  data_to_code <- data.frame(text = c("It is terrible what is happening to this country", "The movie was awesome.", "The stock market has falled dramatically because of the governments' ruinous fiscal policies", "The situation has been calm following the recent local elections"))
+    codebook <- data.frame( category = c("sentiment", "sentiment", "sentiment"), label = c("positive", "negative", "neutral"), instructions = c( "Code this if the sentiment of the tweet is positive", "Code this if the sentiment of the tweet is negative", "Code this if the sentiment of the tweet is neutral" ) )
   
-  codebook <- data.frame( category = c("sentiment", "sentiment", "sentiment"), label = c("positive", "negative", "neutral"), instructions = c( "Code this if the sentiment of the tweet is positive", "Code this if the sentiment of the tweet is negative", "Code this if the sentiment of the tweet is neutral" ) )
-  
-  result <- code_content(data_to_code, general_instructions, formatting_instructions, codebook)
-  
-  
+    result <- code_content(data_to_code, general_instructions, formatting_instructions, codebook)
+    
+    ## Not run:
+    Coding data with openai (4 rows)
+    	Iterating over content...
+    	Coding data with openai / gpt-4o...
+    	Processed text 1 of 4
+    	Coding data with openai / gpt-4o...
+      Processed text 2 of 4
+      Coding data with openai / gpt-4o...
+      Processed text 3 of 4
+    Coding data with openai / gpt-4o...
+    Processed text 4 of 4
+    Parsing JSON responses (4 rows).
+    Done. Joined results for 4 parsed rows.
+	
+    result
+	
+    text  category
+    1                                             It is terrible what is happening to this country sentiment
+    2                                                                       The movie was awesome. sentiment
+    3 The stock market has falled dramatically because of the governments' ruinous fiscal policies sentiment
+    4                             The situation has been calm following the recent local elections sentiment
+    label
+    1 negative
+    2 positive
+    3 negative
+    4  neutral
+
+## End(**Not run**)
