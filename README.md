@@ -18,7 +18,7 @@ First, prepare the general and formatting instructions.
       
     general_instructions <- "You are a highly accurate and consistent text classification model that specializes in analyzing English-language Twitter posts. Your task is to determine the sentiment of the tweet reproduced below. You must strictly follow the classification rules without deviation. Do not return any additional information outside the classification scheme. Use JSON."
   
-    formatting_instructions <-  "Always return a single JSON object with the category name as the key for each coded text. The value should be an object containing a 'label' key and a single value among multiple options. Each JSON object should have the following structure:"
+    formatting_instructions <-  "Always return a single JSON object for each coded text with the category name as the key. The value should be an object containing a 'label' key and a single value among multiple options. Each JSON object should have the following structure:"
   
 Then load your data (or use the example below)
 
@@ -52,3 +52,5 @@ Output the result
 
     result$label
     [1] "negative" "positive" "negative" "neutral" 
+
+Note that changing the 
