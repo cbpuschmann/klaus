@@ -31,7 +31,12 @@ Then load your data (or use the example below). The data must be a data frame or
   
 Prepare the codebook. The codebook should be a data frame or tibble with the columns 'category', 'label' and 'instructions'. 
 
-    codebook <- data.frame(category = c("sentiment", "sentiment", "sentiment"), label = c("positive", "negative", "neutral"), instructions = c("Code this if the sentiment of the tweet is positive", "Code this if the sentiment of the tweet is negative", "Code this if the sentiment of the tweet is neutral"))
+    codebook <- data.frame(
+      category = c("sentiment", "sentiment", "sentiment"), 
+      label = c("positive", "negative", "neutral"), 
+      instructions = c("Code this if the sentiment of the tweet is positive", 
+                       "Code this if the sentiment of the tweet is negative", 
+                       "Code this if the sentiment of the tweet is neutral"))
   
 Code the data (here with gpt-4o)
 

@@ -4,10 +4,10 @@
 \alias{parse_codebook}
 \title{Parse a Codebook into JSON}
 \usage{
-parse_codebook(filepath)
+parse_codebook(x)
 }
 \arguments{
-\item{filepath}{data.frame. A data frame containing the columns
+\item{x}{data.frame. A data frame containing the columns
 'category', 'label', and 'instructions'.}
 }
 \value{
@@ -28,7 +28,7 @@ codebook <- data.frame(category = c("sentiment", "sentiment", "sentiment"),
                        "Code this if the sentiment of the tweet is negative", 
                        "Code this if the sentiment of the tweet is neutral"))
 
-json_codebook <- parse_codebook("codebook_content")
+json_codebook <- parse_codebook("codebook")
 
 cat(json_codebook) # Print the JSON string
 }
