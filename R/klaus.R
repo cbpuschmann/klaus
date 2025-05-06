@@ -1,6 +1,9 @@
 # k l a u s
 # 
 # *** content anlysis with llms ***
+#
+#' @importFrom magrittr %>%
+NULL
 
 
 # 1) Interaction with the ChatAI API
