@@ -53,4 +53,4 @@ Output the result
     result$label
     [1] "negative" "positive" "negative" "neutral" 
 
-Note that changing the 
+Note that while adjusting the instructions to your specific use case is essential, the remaining instructions should largely remain unchanged.
