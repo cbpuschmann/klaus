@@ -1,35 +1,30 @@
-# klaus.R
+# k l a u s
+# 
+# *** content anlysis with llms ***
 
 
-# 1) Generic function for interacting with the ChatAI API
+# 1) Interaction with the ChatAI API
+
 chatai <- function(x = "",
                    system_prompt = "You are a helpful assistant",
                    model = "meta-llama-3.1-8b-instruct",
                    temperature = 0) {
-
-  # --- Input Validation ---
   stopifnot(
     is.character(x), length(x) == 1,
     is.character(system_prompt), length(system_prompt) == 1,
     is.character(model), length(model) == 1, nzchar(model),
     is.numeric(temperature), length(temperature) == 1, temperature >= 0
   )
-
-  # --- API Key ---
   api_key <- Sys.getenv("chatai_key")
   if (api_key == "") {
     stop("API key not found. Please set the 'chatai_key' environment variable.", call. = FALSE)
   }
-
-  # --- API Endpoint and Headers ---
   url <- "https://chat-ai.academiccloud.de/v1/chat/completions"
   headers <- c(
     "Accept" = "application/json",
     "Authorization" = paste0("Bearer ", api_key),
     "Content-Type" = "application/json"
   )
-
-  # --- Request Body ---
   body <- list(
     model = model,
     messages = list(
@@ -38,36 +33,27 @@ chatai <- function(x = "",
     ),
     temperature = temperature
   )
-
-  # --- API Call ---
   response <- tryCatch(
     httr::POST(url,
                httr::add_headers(.headers = headers),
                body = jsonlite::toJSON(body, auto_unbox = TRUE),
-               encode = "json"), # Specify encoding type
+               encode = "json"),
     error = function(e) {
       stop("HTTP request failed: ", e$message, call. = FALSE)
     }
   )
-
-  # --- Status Code Check ---
   status_code <- httr::status_code(response)
   if (status_code >= 400) {
-    # Attempt to get error message from response body
     error_content <- httr::content(response, as = "text", encoding = "UTF-8")
     stop(sprintf("API request failed with status %d. Response: %s",
                  status_code, error_content), call. = FALSE)
   }
   if (status_code >= 300) {
-    # Handle redirects or other non-2xx success codes if necessary
     warning(sprintf("API request returned status %d.", status_code))
   }
   if (status_code != 200) {
-    # Handle unexpected success codes if needed
     warning(sprintf("API request returned unexpected status %d.", status_code))
   }
-
-  # --- Response Parsing ---
   response_text <- httr::content(response, as = "text", encoding = "UTF-8")
   response_parsed <- tryCatch(
     jsonlite::fromJSON(response_text),
@@ -76,40 +62,30 @@ chatai <- function(x = "",
            "\nRaw response: ", response_text, call. = FALSE)
     }
   )
-
-  # --- Response Structure Validation ---
   content_out <- tryCatch(
     response_parsed$choices$message$content[[1]], # Assuming single choice often
     error = function(e) NULL # Return NULL if path doesn't exist
   )
-
   if (is.null(content_out) || !is.character(content_out)) {
     stop("Unexpected API response structure. Could not extract content.",
          "\nParsed response: ", utils::str(response_parsed), call. = FALSE)
   }
-
-  # --- Return Content ---
   return(content_out)
 }
 
 
-# 2) Function to list the available ChatAI API models
+# 2) List the available ChatAI API models
+
 chatai_models <- function() {
-  # --- API Key ---
   api_key <- Sys.getenv("chatai_key")
   if (api_key == "") {
     stop("API key not found. Please set the 'chatai_key' environment variable.", call. = FALSE)
   }
-
-  # --- API Endpoint and Headers ---
   url <- "https://chat-ai.academiccloud.de/v1/models"
   headers <- c(
     "Accept" = "application/json",
     "Authorization" = paste0("Bearer ", api_key)
-    # Content-Type is typically not needed for GET requests
   )
-
-  # --- API Call (using GET) ---
   response <- tryCatch(
     httr::GET(url,
               httr::add_headers(.headers = headers)
@@ -118,22 +94,12 @@ chatai_models <- function() {
       stop("HTTP request failed: ", e$message, call. = FALSE)
     }
   )
-
-  # --- Status Code Check ---
   status_code <- httr::status_code(response)
-  if (status_code != 200) { # Expecting 200 OK for GET success
-    # Attempt to get error message from response body
+  if (status_code != 200) {
     error_content <- httr::content(response, as = "text", encoding = "UTF-8")
     stop(sprintf("API request failed with status %d. Response: %s",
                  status_code, error_content), call. = FALSE)
   }
-
-  # --- Response Parsing ---
-  # Check content type before parsing (optional but good practice)
-  if (!grepl("application/json", httr::http_type(response), fixed = TRUE)) {
-    warning("API did not return JSON content type.")
-  }
-
   response_text <- httr::content(response, as = "text", encoding = "UTF-8")
   response_parsed <- tryCatch(
     jsonlite::fromJSON(response_text),
@@ -142,18 +108,16 @@ chatai_models <- function() {
            "\nRaw response: ", response_text, call. = FALSE)
     }
   )
-
-  # --- Response Structure Validation ---
   if (!is.list(response_parsed) || !("data" %in% names(response_parsed))) {
     stop("Unexpected API response structure. Missing 'data' element.",
          "\nParsed response structure: ", utils::str(response_parsed), call. = FALSE)
   }
-
   return(response_parsed$data)
 }
 
 
-# 3) Helper function to convert a CSV file codebook to JSON to explain coding to the LLM
+# 3) Helper function to convert a data frame to JSON to explain the coding schema to the LLM
+
 parse_codebook <- function(x) {
   required_cols <- c("category", "label", "instructions")
   if (!all(required_cols %in% names(x))) {
@@ -171,8 +135,8 @@ parse_codebook <- function(x) {
     summary_data <- df_cleaned %>%
       dplyr::filter(category == cat_name) %>%
       dplyr::summarise(
-        label = list(label),          # Collect labels into a list
-        .groups = 'drop'              # Drop grouping structure after summarise
+        label = list(label),
+        .groups = 'drop'
       )
     output_list[[cat_name]] <- list(
       label = summary_data$label[[1]]
@@ -183,7 +147,8 @@ parse_codebook <- function(x) {
 }
 
 
-# 4) Internal function to call different LLM APIs
+# 4) Internal helper function to call different LLM APIs
+
 .call_llm <- function(provider, model, user_prompt, system_prompt, temperature) {
   providers_tidyllm <- c("claude", "gemini", "openai", "ollama")
   if (provider == "chatai") {
@@ -197,12 +162,11 @@ parse_codebook <- function(x) {
       )
     },
     error = function(e) {
-      stop(glue::glue("chatai API call failed for model '{model}': {conditionMessage(e)}"), call. = FALSE)
+      stop(glue::glue("Chatai API call failed for model '{model}': {conditionMessage(e)}"), call. = FALSE)
     }
     )
     message(glue::glue("Coding data with {provider} / {model}..."))
     return(response)
-    
   } else if (provider %in% providers_tidyllm) {
     if (provider == "claude") {
       if (is.null(model)) model <- "claude-3-7-sonnet-20250219"
@@ -255,11 +219,12 @@ parse_codebook <- function(x) {
 }
 
 
-# Main function for coding content
+# 5) Main function for coding content
+
 code_content <- function(x,
                          general_instructions,
                          formatting_instructions, # Make sure this is complete!
-                         codebook, # Assumes JSON string from parse_codebook
+                         codebook, 
                          provider = "openai",
                          model = NULL, # Will set set to a default according to the provider
                          temperature = 0,
@@ -279,7 +244,17 @@ code_content <- function(x,
   
   codebook_json <- parse_codebook(codebook)
   system_prompt <- paste0(formatting_instructions, "\n\n", codebook_json)
-  specific_instructions <- paste0("\n\nCategory: ", codebook$category, "\nLabel: ", codebook$label, "\nInstructions: ", codebook$instructions, collapse = "")
+  
+  last_cat <- ""
+  si <- character(0L)
+  for (i in 1:nrow(codebook)) {
+    this_cat <- codebook$category[i]
+    if (this_cat != last_cat) si <- c(si, paste0("# ", codebook$category[i]), "\n")
+    si <- c(si, paste0("*label*: ", codebook$label[i]))
+    si <- c(si, paste0("*instructions*: ", codebook$instructions[i]), "\n")
+    last_cat <- codebook$category[i]
+  }
+  specific_instructions <- paste0(si, collapse = "\n")
   n_rows <- nrow(x)
   api_results <- vector("list", n_rows) # Pre-allocate list
   
@@ -290,6 +265,7 @@ code_content <- function(x,
   for (i in 1:n_rows) {
     user_prompt <- paste0(
       general_instructions,
+      "\n\n",
       specific_instructions,
       "\n\n----\n\n", 
       x$text[i]
