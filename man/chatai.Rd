@@ -28,12 +28,12 @@ Sends a user prompt and system prompt to the specified model via the
 Chat AI API's chat completions endpoint and returns the model's response.
 }
 \details{
-This function requires the \code{chatai_key} environment variable to be set
+This function requires the \code{CHATAI_API_KEY} environment variable to be set
 with a valid API key for authentication.
 }
 \examples{
 \dontrun{
-# Requires API key set in environment variable 'chatai_key'
+# Requires API key set in environment variable 'CHATAI_API_KEY'
 response <- chatai("What is the capital of Germany?")
 print(response)
 

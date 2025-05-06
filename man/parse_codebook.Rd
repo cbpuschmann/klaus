@@ -2,34 +2,29 @@
 % Please edit documentation in R/your_script_name.R
 \name{parse_codebook}
 \alias{parse_codebook}
-\title{Parse a CSV Codebook into JSON}
+\title{Parse a Codebook into JSON}
 \usage{
 parse_codebook(filepath)
 }
 \arguments{
-\item{filepath}{character. The path to the CSV codebook file. The CSV must
-contain 'category', 'label', and 'instructions' columns.}
+\item{filepath}{data.frame. A data frame containing the columns
+'category', 'label', and 'instructions'.}
 }
 \value{
 character. An invisible JSON string representing the codebook,
 structured with category names as keys.
 }
 \description{
-Reads a CSV file defining coding categories, labels, and instructions,
+Reads a data frame defining coding categories, labels, and instructions,
 validates its structure, and converts it into a JSON string suitable for
-use with the Chat AI API functions in this package. Handles single or
-multiple categories defined in the CSV.
+use with the API call. Handles single or multiple categories.
 }
 \examples{
 \dontrun{
-# Create a dummy CSV file for demonstration
-codebook_content <- '"category","label","instructions"\\n"sentiment","positive","Assign if positive"\\n"sentiment","negative","Assign if negative"'
-writeLines(codebook_content, "temp_codebook.csv")
+codebook <- data.frame(category = c("sentiment", "sentiment", "sentiment"), label = c("positive", "negative", "neutral"), instructions = c("Code this if the sentiment of the tweet is positive", "Code this if the sentiment of the tweet is negative", "Code this if the sentiment of the tweet is neutral"))
 
-json_codebook <- parse_codebook("temp_codebook.csv")
+json_codebook <- parse_codebook("codebook_content")
+
 cat(json_codebook) # Print the JSON string
-
-# Clean up dummy file
-unlink("temp_codebook.csv")
 }
 }

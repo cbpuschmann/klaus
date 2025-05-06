@@ -7,20 +7,18 @@
 chatai_models()
 }
 \value{
-A data structure (likely a list or data frame) containing details
-about the models available via the API. The exact structure depends on the
-API response format.
+A data frame containing details about the models available via the API. 
 }
 \description{
 Retrieves the list of available models from the Chat AI API's models endpoint.
 }
 \details{
-This function requires the \code{chatai_key} environment variable to be set
+This function requires the \code{CHATAI_API_KEY} environment variable to be set
 with a valid API key for authentication.
 }
 \examples{
 \dontrun{
-# Requires API key set in environment variable 'chatai_key'
+# Requires API key set in environment variable 'CHATAI_API_KEY'
 available_models <- chatai_models()
 print(available_models)
 }
