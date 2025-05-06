@@ -29,13 +29,12 @@ Then load your data (or use the example below)
   
 Prepare the codebook
 
-    codebook <- data.frame( category = c("sentiment", "sentiment", "sentiment"), label = c("positive", "negative", "neutral"), instructions = c( "Code this if the sentiment of the tweet is positive", "Code this if the sentiment of the tweet is negative", "Code this if the sentiment of the tweet is neutral" ) )
+    codebook <- data.frame( category = c("sentiment", "sentiment", "sentiment"), label = c("positive", "negative", "neutral"), instructions = c( "Code this if the sentiment of the tweet is positive", "Code this if the sentiment of the tweet is negative", "Code this if the sentiment of the tweet is neutral"))
   
 Code the data (here with gpt-4o)
 
     result <- code_content(data_to_code, general_instructions, formatting_instructions, codebook)
     
-    ## Not run:
     Coding data with openai (4 rows)
     Iterating over content...
     Coding data with openai / gpt-4o...
@@ -48,16 +47,8 @@ Code the data (here with gpt-4o)
     Processed text 4 of 4
     Parsing JSON responses (4 rows).
     Done. Joined results for 4 parsed rows.
-	
-    result
-	
-    text  category
-    1                                             It is terrible what is happening to this country sentiment
-    2                                                                       The movie was awesome. sentiment
-    3 The stock market has falled dramatically because of the governments' ruinous fiscal policies sentiment
-    4                             The situation has been calm following the recent local elections sentiment
-    label
-    1 negative
-    2 positive
-    3 negative
-    4 neutral
+
+Output the result
+
+    result$label
+    [1] "negative" "positive" "negative" "neutral" 
