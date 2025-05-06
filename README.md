@@ -9,6 +9,8 @@ Modern large language models offer considerable advantages for standardized cont
 `klaus` can be installed from source via the [remotes](https://cran.r-project.org/package=remotes) package.
 
     remotes::install_github("cbpuschmann/klaus")
+    
+    library(klaus)
   
 ## Usage
 
