@@ -12,6 +12,13 @@ Modern large language models offer considerable advantages for standardized cont
     
     library(klaus)
   
+The package requires API access keys to be stored as environment variables. These can be set via the [usethis](https://cran.r-project.org/package=usethis) package.
+
+    usethis::edit_r_environ()
+    
+The keys should be called `OPENAI_API_KEY`, `GOOGLE_API_KEY`, `ANTHROPIC_API_KEY` and `CHATAI_API_KEY`. Simply add an 
+entry in the form `OPENAI_API_KEY="xxxxxxxxxxxx"` to your .Renviron file. 
+
 ## Usage
 
 The package's main function `code_content()` takes general instructions, formatting instructions and a codebook as its arguments.
