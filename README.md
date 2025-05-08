@@ -67,4 +67,19 @@ Output the result
     result$label
     [1] "negative" "positive" "negative" "neutral" 
 
-Note that while adjusting the instructions to your specific use case is essential, the remaining instructions should largely remain unchanged.
+## Coding with the ChatAI API
+
+ChatAI can be specified as the API to use with the *provider* parameter. In the example below, we specify use of ChatAI and LLama 3.3 70b.
+
+    coded_data_chatai <- code_content(data_to_code, 
+                                      general_instructions, 
+                                      formatting_instructions, 
+                                      codebook, 
+                                      provider = "chatai", 
+                                      model = "llama-3.3-70b-instruct")
+
+For convenience, the `chatai_models()` function lists all models available via the ChatAI API.
+
+## Prompting
+
+Note that while adjusting the instructions to your specific use case is essential, the remaining generic instructions should largely remain unchanged to ensure that the API responds with parseable results.
