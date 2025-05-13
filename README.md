@@ -25,15 +25,20 @@ The package's main function `code_content()` takes general instructions, formatt
 
 First, prepare the general and formatting instructions.
       
-    general_instructions <- "You are a highly accurate and consistent text classification model that specializes in analyzing English-language Twitter posts. Your task is to determine the sentiment of the tweet reproduced below. You must strictly follow the classification rules without deviation. Do not return any additional information outside the classification scheme. Use JSON."
+    general_instructions <- "You are a highly accurate and consistent text classification model that specializes in analyzing 
+    English-language Twitter posts. Your task is to determine the sentiment of the tweet reproduced below. You must strictly 
+    follow the classification rules without deviation. Do not return any additional information outside the classification 
+    scheme. Use JSON."
   
-    formatting_instructions <- "Always return a single JSON object for each coded text with the category name as the key. The value should be an object containing a 'label' key and a single value among multiple options. Each JSON object should have the following structure:"
+    formatting_instructions <- "Always return a single JSON object for each coded text with the category name as the key. 
+    The value should be an object containing a 'label' key and a single value among multiple options. Each JSON object should 
+    have the following structure:"
   
 Then load your data (or use the example below). The data must be a data frame or tibble with a column named 'text'.
 
     data_to_code <- data.frame(text = c("It is terrible what is happening to this country", 
                                       "The movie was awesome.", 
-                                      "The stock market has falled dramatically because of the governments' ruinous fiscal policies", 
+                                      "The stock market has falled dramatically because of the governments' bad fiscal policies", 
                                       "The situation has been calm following the recent local elections"))
   
 Prepare the codebook. The codebook should be a data frame or tibble with the columns 'category', 'label' and 'instructions'. 
@@ -82,7 +87,7 @@ For convenience, the `chatai_models()` function lists all models available via t
 
 ## Coding with ollama
 
-Coding with ollama requires having [ollama](https://ollama.com/) and the mode you would like to use installed, with no other requirements. 
+Coding with ollama requires having [ollama](https://ollama.com/) and the model you would like to use installed, with no other requirements. 
 
     coded_data_ollama <- code_content(data_to_code, 
                                       general_instructions, 
