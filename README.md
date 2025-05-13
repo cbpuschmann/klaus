@@ -80,6 +80,19 @@ ChatAI can be specified as the API to use with the *provider* parameter. In the 
 
 For convenience, the `chatai_models()` function lists all models available via the ChatAI API.
 
+## Coding with ollama
+
+Coding with ollama requires having [ollama](https://ollama.com/) and the mode you would like to use installed, with no other requirements. 
+
+    coded_data_ollama <- code_content(data_to_code, 
+                                      general_instructions, 
+                                      formatting_instructions, 
+                                      codebook, 
+                                      provider = "ollama",
+                                      model = "llama3.1")
+
+
+
 ## Prompting
 
 Note that while adjusting the instructions to your specific use case is essential, the remaining generic instructions should largely remain unchanged to ensure that the API responds with parseable results.
