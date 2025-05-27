@@ -2,7 +2,7 @@
 
 ![klaus](logo.png?raw=true "klaus")
 
-Modern large language models offer considerable advantages for standardized content analysis. `klaus` facilitates use of both proprietary and open source LLMs by offering a simple interface through which to serve data and apply categorization. Presently the package supports the proprietary APIs of OpenAI, Anthropic and Google, as well as for [ollama](https://ollama.com/) (through [tidyllm](https://cran.r-project.org/package=tidyllm)), in addition to the non-commercial [ChatAI API](https://docs.hpc.gwdg.de/services/saia/index.html) service provided by [GWDG](https://gwdg.de/en/). 
+Modern large language models (LLMs) offer considerable advantages for standardized content analysis. `klaus` facilitates use of both proprietary and open source LLMs by offering a simple interface through which to serve data and apply categorization. Presently the package supports the proprietary APIs of OpenAI, Anthropic and Google, as well as for local use via [ollama](https://ollama.com/) (through [tidyllm](https://cran.r-project.org/package=tidyllm)). In addition, for academic research, it is also possible to use the non-commercial [ChatAI API](https://docs.hpc.gwdg.de/services/saia/index.html) service provided by [GWDG](https://gwdg.de/en/) or [Blablador](https://helmholtz.cloud/services/?serviceID=d7d5c597-a2f6-4bd1-b71e-4d6499d98570&sortByAttribute=userCount) provided by the [Forschungszentrum Jülich](https://www.fz-juelich.de/en). 
 
 ## Installation
 
@@ -12,16 +12,16 @@ Modern large language models offer considerable advantages for standardized cont
     
     library(klaus)
   
-The package requires API access keys to be stored as environment variables. These can be set via the [usethis](https://cran.r-project.org/package=usethis) package.
+The package requires API keys to be stored as environment variables. These can be set via the [usethis](https://cran.r-project.org/package=usethis) package.
 
     usethis::edit_r_environ()
     
-The keys should be called `OPENAI_API_KEY`, `GOOGLE_API_KEY`, `ANTHROPIC_API_KEY` and `CHATAI_API_KEY`. Simply add an 
-entry in the form `OPENAI_API_KEY="xxxxxxxxxxxx"` to your .Renviron file. 
+The keys should be called `OPENAI_API_KEY`, `GOOGLE_API_KEY`, `ANTHROPIC_API_KEY`, `CHATAI_API_KEY`, and `BLABLADOR_API_KEY`. Simply add an 
+entry in the form `OPENAI_API_KEY="xxxxxxxxxxxx"` to your `.Renviron` file. 
 
 ## Usage
 
-The package's main function `code_content()` takes general instructions, formatting instructions and a codebook as its arguments.
+The main function of the package is `code_content()` which takes general instructions, formatting instructions, and a codebook as its arguments.
 
 First, prepare the general and formatting instructions.
       
@@ -50,7 +50,7 @@ Prepare the codebook. The codebook should be a data frame or tibble with the col
                        "Code this if the sentiment of the tweet is negative", 
                        "Code this if the sentiment of the tweet is neutral"))
   
-Code the data (here with gpt-4o)
+Code the data (in this example with gpt-4o)
 
     result <- code_content(data_to_code, general_instructions, formatting_instructions, codebook)
     
@@ -85,9 +85,22 @@ ChatAI can be specified as the API to use with the *provider* parameter. In the 
 
 For convenience, the `chatai_models()` function lists all models available via the ChatAI API.
 
+## Coding with the Blablador API
+
+To use the Blablador API, you need to [request an API key](https://sdlaml.pages.jsc.fz-juelich.de/ai/guides/blablador_api_access/). Blablador can be specified as the API to use with the *provider* parameter. In the example below, we specify use of Blablador as provider and Llama3 405 as the model.
+
+    coded_data_chatai <- code_content(data_to_code, 
+                                      general_instructions, 
+                                      formatting_instructions, 
+                                      codebook, 
+                                      provider = "blablador", 
+                                      model = "1 - Llama3 405 the best general model and big context size")
+
+For convenience, the `blablador_models()` function lists all models available via the Blablador API.
+
 ## Coding with ollama
 
-Coding with ollama requires having [ollama](https://ollama.com/) and the model you would like to use installed, with no other requirements. 
+Coding with ollama requires having [ollama](https://ollama.com/) and the model you would like to use installed. 
 
     coded_data_ollama <- code_content(data_to_code, 
                                       general_instructions, 
