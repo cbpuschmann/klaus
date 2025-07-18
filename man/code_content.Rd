@@ -31,7 +31,7 @@ on how to format its JSON output.}
 \item{codebook}{data.frame. A data frame representing the codebook.}
 
 \item{provider}{character. The API used. Must be "claude", "gemini", "openai", 
-#' "ollama", "chatai", "blablador" or "openwebui.}
+"ollama", "chatai", "blablador" or "openwebui.}
 
 \item{model}{character. The identifier of the model to use.}
 
