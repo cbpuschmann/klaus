@@ -2,7 +2,7 @@
 
 ![klaus](logo.png?raw=true "klaus")
 
-Modern large language models (LLMs) offer considerable advantages for standardized content analysis. `klaus` facilitates use of both proprietary and open source LLMs by offering a simple interface through which to serve data and apply categorization. Presently the package supports the proprietary APIs of OpenAI, Anthropic and Google, as well as for local use via [ollama](https://ollama.com/) (through [tidyllm](https://cran.r-project.org/package=tidyllm)). In addition, for academic research, it is also possible to use the non-commercial [ChatAI API](https://docs.hpc.gwdg.de/services/saia/index.html) service provided by [GWDG](https://gwdg.de/en/) or [Blablador](https://helmholtz.cloud/services/?serviceID=d7d5c597-a2f6-4bd1-b71e-4d6499d98570&sortByAttribute=userCount) provided by the [Forschungszentrum Jülich](https://www.fz-juelich.de/en). 
+Modern large language models (LLMs) offer considerable advantages for standardized content analysis. `klaus` facilitates use of both proprietary and open source LLMs by offering a simple interface through which to serve data and apply categorization. Presently the package supports the proprietary APIs of OpenAI, Anthropic and Google, as well as for local use via [ollama](https://ollama.com/) (through [tidyllm](https://cran.r-project.org/package=tidyllm)). In addition, for academic research, it is also possible to use the non-commercial [ChatAI API](https://docs.hpc.gwdg.de/services/saia/index.html) service provided by [GWDG](https://gwdg.de/en/), [Blablador](https://helmholtz.cloud/services/?serviceID=d7d5c597-a2f6-4bd1-b71e-4d6499d98570&sortByAttribute=userCount) provided by the [Forschungszentrum Jülich](https://www.fz-juelich.de/en), or [Open WebUI](https://openwebui.com/). 
 
 ## Installation
 
@@ -16,7 +16,7 @@ The package requires API keys to be stored as environment variables. These can b
 
     usethis::edit_r_environ()
     
-The keys should be called `OPENAI_API_KEY`, `GOOGLE_API_KEY`, `ANTHROPIC_API_KEY`, `CHATAI_API_KEY`, and `BLABLADOR_API_KEY`. Simply add an 
+The keys should be called `OPENAI_API_KEY`, `GOOGLE_API_KEY`, `ANTHROPIC_API_KEY`, `CHATAI_API_KEY`, `BLABLADOR_API_KEY`, and `OPENWEBUI_API_KEY`. Simply add an 
 entry in the form `OPENAI_API_KEY="xxxxxxxxxxxx"` to your `.Renviron` file. 
 
 ## Usage
@@ -97,6 +97,19 @@ To use the Blablador API, you need to [request an API key](https://sdlaml.pages.
                                       model = "1 - Llama3 405 the best general model and big context size")
 
 For convenience, the `blablador_models()` function lists all models available via the Blablador API.
+
+## Coding with the Open WebUI API
+
+Open WebUI can be specified as the API to use with the *provider* parameter. In the example below, we specify use of Open WebUI as provider and Llama4 as the model. In addition to the usual arguments, for using Open WebUI, you also need to specify a `base_url`. If you are running Open WebUI locally, this is likely to be `http://localhost:3000`. If your institution is hosting an instance, you will need to specify the URL of that instance.
+
+    coded_data_openwebui <- code_content(data_to_code, 
+                                      general_instructions, 
+                                      formatting_instructions, 
+                                      codebook, 
+                                      provider = "openwebui", 
+                                      model = "llama4:latest")
+
+For convenience, the `openwebui_models()` function lists all models available via the Open WebUI API. Please note that you also need to specify the `base_url` argument when using this function.
 
 ## Coding with ollama
 

@@ -3,7 +3,6 @@
 # *** content anlysis with llms ***
 #
 
-
 # 1) Interaction with the ChatAI API
 
 chatai <- function(x = "",
@@ -73,7 +72,6 @@ chatai <- function(x = "",
   }
   return(content_out)
 }
-
 
 # 2) List the available ChatAI API models
 
@@ -227,7 +225,123 @@ blablador_models <- function() {
   return(response_parsed$data)
 }
 
-# 5) Helper function to convert a data frame to JSON to explain the coding schema to the LLM
+# 5) Interaction with the Open WebUI API
+
+openwebui <- function(x = "",
+                      base_url ="",
+                      system_prompt = "You are a helpful assistant",
+                      model = "llama4:latest",
+                      temperature = 0) {
+  stopifnot(
+    is.character(x), length(x) == 1,
+    is.character(base_url), length(base_url) == 1,
+    is.character(system_prompt), length(system_prompt) == 1,
+    is.character(model), length(model) == 1, nzchar(model),
+    is.numeric(temperature), length(temperature) == 1, temperature >= 0, temperature <= 1
+  )
+  api_key <- Sys.getenv("OPENWEBUI_API_KEY")
+  if (api_key == "") {
+    stop("API key not found. Please set the 'OPENWEBUI_API_KEY' environment variable.", call. = FALSE)
+  }
+  url <- paste0(base_url,"/api/chat/completions")
+  headers <- c(
+    "Accept" = "application/json",
+    "Authorization" = paste0("Bearer ", api_key),
+    "Content-Type" = "application/json"
+  )
+  body <- list(
+    model = model,
+    messages = list(
+      list(role = "system", content = system_prompt),
+      list(role = "user", content = x)
+    ),
+    temperature = temperature
+  )
+  response <- tryCatch(
+    httr::POST(url,
+               httr::add_headers(.headers = headers),
+               body = jsonlite::toJSON(body, auto_unbox = TRUE),
+               encode = "json"),
+    error = function(e) {
+      stop("HTTP request failed: ", e$message, call. = FALSE)
+    }
+  )
+  status_code <- httr::status_code(response)
+  if (status_code >= 400) {
+    error_content <- httr::content(response, as = "text", encoding = "UTF-8")
+    stop(sprintf("API request failed with status %d. Response: %s",
+                 status_code, error_content), call. = FALSE)
+  }
+  if (status_code >= 300) {
+    warning(sprintf("API request returned status %d.", status_code))
+  }
+  if (status_code != 200) {
+    warning(sprintf("API request returned unexpected status %d.", status_code))
+  }
+  response_text <- httr::content(response, as = "text", encoding = "UTF-8")
+  response_parsed <- tryCatch(
+    jsonlite::fromJSON(response_text),
+    error = function(e) {
+      stop("Failed to parse JSON response: ", e$message,
+           "\nRaw response: ", response_text, call. = FALSE)
+    }
+  )
+  content_out <- tryCatch(
+    response_parsed$choices$message$content[[1]], # Assuming single choice often
+    error = function(e) NULL # Return NULL if path doesn't exist
+  )
+  if (is.null(content_out) || !is.character(content_out)) {
+    stop("Unexpected API response structure. Could not extract content.",
+         "\nParsed response: ", utils::str(response_parsed), call. = FALSE)
+  }
+  return(content_out)
+}
+
+# 6) List the available Open WebUI API models
+
+openwebui_models <- function(base_url = "") {
+  stopifnot(
+    is.character(base_url), length(base_url) == 1
+  )
+  api_key <- Sys.getenv("OPENWEBUI_API_KEY")
+  if (api_key == "") {
+    stop("API key not found. Please set the 'OPENWEBUI_API_KEY' environment variable.", call. = FALSE)
+  }
+  url <- paste0(base_url, "/api/models")
+  headers <- c(
+    "Accept" = "application/json",
+    "Authorization" = paste0("Bearer ", api_key)
+  )
+  response <- tryCatch(
+    httr::GET(url,
+              httr::add_headers(.headers = headers)
+    ),
+    error = function(e) {
+      stop("HTTP request failed: ", e$message, call. = FALSE)
+    }
+  )
+  status_code <- httr::status_code(response)
+  if (status_code != 200) {
+    error_content <- httr::content(response, as = "text", encoding = "UTF-8")
+    stop(sprintf("API request failed with status %d. Response: %s",
+                 status_code, error_content), call. = FALSE)
+  }
+  response_text <- httr::content(response, as = "text", encoding = "UTF-8")
+  response_parsed <- tryCatch(
+    jsonlite::fromJSON(response_text),
+    error = function(e) {
+      stop("Failed to parse JSON response: ", e$message,
+           "\nRaw response: ", response_text, call. = FALSE)
+    }
+  )
+  if (!is.list(response_parsed) || !("data" %in% names(response_parsed))) {
+    stop("Unexpected API response structure. Missing 'data' element.",
+         "\nParsed response structure: ", utils::str(response_parsed), call. = FALSE)
+  }
+  return(response_parsed$data)
+}
+
+# 7) Helper function to convert a data frame to JSON to explain the coding schema to the LLM
 
 parse_codebook <- function(x) {
   required_cols <- c("category", "label", "instructions")
@@ -257,8 +371,7 @@ parse_codebook <- function(x) {
   return(invisible(json_output))
 }
 
-
-# 6) Internal helper function to call different LLM APIs
+# 8) Internal helper function to call different LLM APIs
 
 .call_llm <- function(provider, model, user_prompt, system_prompt, temperature) {
   providers_tidyllm <- c("claude", "gemini", "openai", "ollama")
@@ -291,6 +404,23 @@ parse_codebook <- function(x) {
     },
     error = function(e) {
       stop(glue::glue("Blablador API call failed for model '{model}': {conditionMessage(e)}"), call. = FALSE)
+    }
+    )
+    message(glue::glue("Coding data with {provider} / {model}..."))
+    return(response)
+  }
+  if (provider == "openwebui") {
+    if (is.null(model)) model <- "llama4:latest"
+    response <- tryCatch({
+      blablador(
+        x = user_prompt,
+        system_prompt = system_prompt,
+        model = model, 
+        temperature = temperature
+      )
+    },
+    error = function(e) {
+      stop(glue::glue("Open WebUI API call failed for model '{model}': {conditionMessage(e)}"), call. = FALSE)
     }
     )
     message(glue::glue("Coding data with {provider} / {model}..."))
@@ -347,8 +477,7 @@ parse_codebook <- function(x) {
   }
 }
 
-
-# 7) Main function for coding content
+# 9) Main function for coding content
 
 code_content <- function(x,
                          general_instructions,
@@ -363,7 +492,7 @@ code_content <- function(x,
                          keep_all_original_rows = TRUE) {
   
   # Check if provider is supported (can be expanded)
-  supported_providers <- c("chatai", "claude", "gemini", "openai", "ollama", "blablador")
+  supported_providers <- c("chatai", "claude", "gemini", "openai", "ollama", "blablador", "openwebui")
   if (!(provider %in% supported_providers)) {
     stop(glue::glue("Unsupported API provider: '{provider}'. Supported: {paste(supported_providers, collapse=', ')}"), call. = FALSE)
   }

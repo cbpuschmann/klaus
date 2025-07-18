@@ -10,8 +10,7 @@ Authors@R: c(
     )
   )
 Description: Provides tools to facilitate automated text classification and
-    content analysis using the Chat AI API
-    (<https://chat-ai.academiccloud.de>). Includes functions for API
+    content analysis using different LLM provider APIs. Includes functions for API
     interaction, codebook parsing from CSV, and batch processing of text
     data according to specified coding schemes.
 License: MIT + file LICENSE
@@ -27,3 +26,4 @@ Imports:
     readr,
     stringr,
     tidyllm
+RoxygenNote: 7.3.1
