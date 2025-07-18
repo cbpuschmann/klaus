@@ -13,7 +13,7 @@ openwebui_models(base_url = "")
 A data frame containing details about the models available via the API.
 }
 \description{
-Retrieves the list of available models from the BLABLADOR API models endpoint.
+Retrieves the list of available models from the Open WebUI API models endpoint.
 }
 \details{
 This function requires the \code{OPENWEBUI_API_KEY} environment variable to be set

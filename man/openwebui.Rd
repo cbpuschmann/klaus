@@ -28,7 +28,7 @@ character. The content of the message returned by the API model.
 }
 \description{
 Sends a user prompt and system prompt to the specified model via the
-BLABLADOR API chat completions endpoint and returns the model's response.
+Open WebUI API chat completions endpoint and returns the model's response.
 }
 \details{
 This function requires the \code{OPENWEBUI_API_KEY} environment variable to be set
