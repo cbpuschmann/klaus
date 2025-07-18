@@ -419,7 +419,8 @@ parse_codebook <- function(x) {
         x = user_prompt,
         system_prompt = system_prompt,
         model = model, 
-        temperature = temperature
+        temperature = temperature,
+        base_url = base_url
       )
     },
     error = function(e) {
@@ -485,9 +486,10 @@ parse_codebook <- function(x) {
 code_content <- function(x,
                          general_instructions,
                          formatting_instructions, # Make sure this is complete!
-                         codebook, 
+                         codebook,
                          provider = "openai",
                          model = NULL, # Will set set to a default according to the provider
+                         base_url = NULL, # Added base_url argument
                          temperature = 0,
                          sleep = 0,
                          drop_json = TRUE,
@@ -498,6 +500,11 @@ code_content <- function(x,
   supported_providers <- c("chatai", "claude", "gemini", "openai", "ollama", "blablador", "openwebui")
   if (!(provider %in% supported_providers)) {
     stop(glue::glue("Unsupported API provider: '{provider}'. Supported: {paste(supported_providers, collapse=', ')}"), call. = FALSE)
+  }
+  
+  # --- Conditional check for base_url with openwebui ---
+  if (provider == "openwebui" && is.null(base_url)) {
+    stop("The 'base_url' argument must be specified when 'provider' is 'openwebui'.", call. = FALSE)
   }
   
   # --- Add original row identifier ---
@@ -528,7 +535,7 @@ code_content <- function(x,
       general_instructions,
       "\n\n",
       specific_instructions,
-      "\n\n----\n\n", 
+      "\n\n----\n\n",
       x$text[i]
     )
     # Use tryCatch around the internal helper call
@@ -538,7 +545,8 @@ code_content <- function(x,
         model = model,
         user_prompt = user_prompt,
         system_prompt = system_prompt,
-        temperature = temperature
+        temperature = temperature,
+        base_url = base_url # Pass base_url to .call_llm
       )
     },
     error = function(e) {
