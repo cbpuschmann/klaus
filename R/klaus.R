@@ -373,7 +373,7 @@ parse_codebook <- function(x) {
 
 # 8) Internal helper function to call different LLM APIs
 
-.call_llm <- function(provider, model, user_prompt, system_prompt, temperature) {
+.call_llm <- function(provider, model, user_prompt, system_prompt, temperature, base_url = NULL) {
   providers_tidyllm <- c("claude", "gemini", "openai", "ollama")
   if (provider == "chatai") {
     if (is.null(model)) model <- "meta-llama-3.1-8b-instruct"
@@ -410,9 +410,12 @@ parse_codebook <- function(x) {
     return(response)
   }
   if (provider == "openwebui") {
+    if (is.null(base_url)) {
+      stop("Base URL for Open WebUI API must be provided.", call. = FALSE)
+    }
     if (is.null(model)) model <- "llama4:latest"
     response <- tryCatch({
-      blablador(
+      openwebui(
         x = user_prompt,
         system_prompt = system_prompt,
         model = model, 
