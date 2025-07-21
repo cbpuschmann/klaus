@@ -89,7 +89,7 @@ For convenience, the `chatai_models()` function lists all models available via t
 
 To use the Blablador API, you need to [request an API key](https://sdlaml.pages.jsc.fz-juelich.de/ai/guides/blablador_api_access/). Blablador can be specified as the API to use with the *provider* parameter. In the example below, we specify use of Blablador as provider and Llama3 405 as the model.
 
-    coded_data_chatai <- code_content(data_to_code, 
+    coded_data_blablador <- code_content(data_to_code, 
                                       general_instructions, 
                                       formatting_instructions, 
                                       codebook, 
@@ -107,9 +107,10 @@ Open WebUI can be specified as the API to use with the *provider* parameter. In 
                                       formatting_instructions, 
                                       codebook, 
                                       provider = "openwebui", 
-                                      model = "llama4:latest")
+                                      model = "llama4:latest",
+                                      base_url = "http://localhost:3000")
 
-For convenience, the `openwebui_models()` function lists all models available via the Open WebUI API. Please note that you also need to specify the `base_url` argument when using this function.
+For convenience, the `openwebui_models()` function lists all models available via the Open WebUI API of your installation/instance. Please note that you also need to specify the `base_url` argument when using this function.
 
 ## Coding with ollama
 
