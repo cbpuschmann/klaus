@@ -9,6 +9,9 @@ chatai <- function(x = "",
                    system_prompt = "You are a helpful assistant",
                    model = "meta-llama-3.1-8b-instruct",
                    temperature = 0) {
+  # #region agent log
+  cat(jsonlite::toJSON(list(location="klaus.R:8", message="chatai function entry", data=list(model=model, temperature=temperature, input_length=nchar(x)), timestamp=as.numeric(Sys.time())*1000, sessionId="debug-session", runId="run1", hypothesisId="A"), auto_unbox=TRUE), "\n", file="/Users/cp/Documents/GitHub/klaus/.cursor/debug.log", append=TRUE)
+  # #endregion
   stopifnot(
     is.character(x), length(x) == 1,
     is.character(system_prompt), length(system_prompt) == 1,
@@ -43,15 +46,18 @@ chatai <- function(x = "",
     }
   )
   status_code <- httr::status_code(response)
+  # #region agent log
+  cat(jsonlite::toJSON(list(location="klaus.R:48", message="chatai status code check", data=list(status_code=status_code), timestamp=as.numeric(Sys.time())*1000, sessionId="debug-session", runId="run1", hypothesisId="E"), auto_unbox=TRUE), "\n", file="/Users/cp/Documents/GitHub/klaus/.cursor/debug.log", append=TRUE)
+  # #endregion
+  # Improved: Simplified redundant status code checks
   if (status_code >= 400) {
     error_content <- httr::content(response, as = "text", encoding = "UTF-8")
     stop(sprintf("API request failed with status %d. Response: %s",
                  status_code, error_content), call. = FALSE)
   }
-  if (status_code >= 300) {
-    warning(sprintf("API request returned status %d.", status_code))
-  }
-  if (status_code != 200) {
+  if (status_code >= 300 && status_code < 400) {
+    warning(sprintf("API request returned redirect status %d.", status_code))
+  } else if (status_code != 200) {
     warning(sprintf("API request returned unexpected status %d.", status_code))
   }
   response_text <- httr::content(response, as = "text", encoding = "UTF-8")
@@ -62,14 +68,23 @@ chatai <- function(x = "",
            "\nRaw response: ", response_text, call. = FALSE)
     }
   )
+  # #region agent log
+  cat(jsonlite::toJSON(list(location="klaus.R:68", message="chatai before response parsing", data=list(has_choices=!is.null(response_parsed$choices), choices_length=ifelse(is.null(response_parsed$choices), 0, length(response_parsed$choices))), timestamp=as.numeric(Sys.time())*1000, sessionId="debug-session", runId="run1", hypothesisId="C"), auto_unbox=TRUE), "\n", file="/Users/cp/Documents/GitHub/klaus/.cursor/debug.log", append=TRUE)
+  # #endregion
   content_out <- tryCatch(
     response_parsed$choices$message$content[[1]], # Assuming single choice often
     error = function(e) NULL # Return NULL if path doesn't exist
   )
+  # #region agent log
+  cat(jsonlite::toJSON(list(location="klaus.R:75", message="chatai after response parsing", data=list(is_null=is.null(content_out), is_character=is.character(content_out), content_length=ifelse(is.character(content_out), nchar(content_out), 0)), timestamp=as.numeric(Sys.time())*1000, sessionId="debug-session", runId="run1", hypothesisId="C"), auto_unbox=TRUE), "\n", file="/Users/cp/Documents/GitHub/klaus/.cursor/debug.log", append=TRUE)
+  # #endregion
   if (is.null(content_out) || !is.character(content_out)) {
     stop("Unexpected API response structure. Could not extract content.",
          "\nParsed response: ", utils::str(response_parsed), call. = FALSE)
   }
+  # #region agent log
+  cat(jsonlite::toJSON(list(location="klaus.R:82", message="chatai function exit", data=list(success=TRUE), timestamp=as.numeric(Sys.time())*1000, sessionId="debug-session", runId="run1", hypothesisId="A"), auto_unbox=TRUE), "\n", file="/Users/cp/Documents/GitHub/klaus/.cursor/debug.log", append=TRUE)
+  # #endregion
   return(content_out)
 }
 
@@ -154,15 +169,15 @@ blablador <- function(x = "",
     }
   )
   status_code <- httr::status_code(response)
+  # Improved: Simplified redundant status code checks
   if (status_code >= 400) {
     error_content <- httr::content(response, as = "text", encoding = "UTF-8")
     stop(sprintf("API request failed with status %d. Response: %s",
                  status_code, error_content), call. = FALSE)
   }
-  if (status_code >= 300) {
-    warning(sprintf("API request returned status %d.", status_code))
-  }
-  if (status_code != 200) {
+  if (status_code >= 300 && status_code < 400) {
+    warning(sprintf("API request returned redirect status %d.", status_code))
+  } else if (status_code != 200) {
     warning(sprintf("API request returned unexpected status %d.", status_code))
   }
   response_text <- httr::content(response, as = "text", encoding = "UTF-8")
@@ -267,15 +282,15 @@ openwebui <- function(x = "",
     }
   )
   status_code <- httr::status_code(response)
+  # Improved: Simplified redundant status code checks
   if (status_code >= 400) {
     error_content <- httr::content(response, as = "text", encoding = "UTF-8")
     stop(sprintf("API request failed with status %d. Response: %s",
                  status_code, error_content), call. = FALSE)
   }
-  if (status_code >= 300) {
-    warning(sprintf("API request returned status %d.", status_code))
-  }
-  if (status_code != 200) {
+  if (status_code >= 300 && status_code < 400) {
+    warning(sprintf("API request returned redirect status %d.", status_code))
+  } else if (status_code != 200) {
     warning(sprintf("API request returned unexpected status %d.", status_code))
   }
   response_text <- httr::content(response, as = "text", encoding = "UTF-8")
@@ -350,7 +365,7 @@ parse_codebook <- function(x) {
     stop(paste("CSV must contain 'category', 'label', and 'instructions' columns. Missing:", paste(missing_cols, collapse=", ")), call. = FALSE)
   }
   df_cleaned <- x %>%
-    dplyr::filter(!is.na(category))
+    dplyr::filter(!is.na(.data$category))
   if (nrow(df_cleaned) == 0) {
     stop("No valid 'category' entries found after removing rows with NA category.", call. = FALSE)
   }
@@ -358,9 +373,9 @@ parse_codebook <- function(x) {
   output_list <- list()
   for (cat_name in unique_categories) {
     summary_data <- df_cleaned %>%
-      dplyr::filter(category == cat_name) %>%
+      dplyr::filter(.data$category == cat_name) %>%
       dplyr::summarise(
-        label = list(label),
+        label = list(.data$label),
         .groups = 'drop'
       )
     output_list[[cat_name]] <- list(
@@ -377,6 +392,11 @@ parse_codebook <- function(x) {
   providers_tidyllm <- c("claude", "gemini", "openai", "ollama")
   if (provider == "chatai") {
     if (is.null(model)) model <- "meta-llama-3.1-8b-instruct"
+    # Improved: Print message before API call, not after
+    message(glue::glue("Coding data with {provider} / {model}..."))
+    # #region agent log
+    cat(jsonlite::toJSON(list(location="klaus.R:395", message="before chatai API call", data=list(provider=provider, model=model), timestamp=as.numeric(Sys.time())*1000, sessionId="debug-session", runId="run1", hypothesisId="D"), auto_unbox=TRUE), "\n", file="/Users/cp/Documents/GitHub/klaus/.cursor/debug.log", append=TRUE)
+    # #endregion
     response <- tryCatch({
       chatai(
         x = user_prompt,
@@ -389,11 +409,15 @@ parse_codebook <- function(x) {
       stop(glue::glue("Chatai API call failed for model '{model}': {conditionMessage(e)}"), call. = FALSE)
     }
     )
-    message(glue::glue("Coding data with {provider} / {model}..."))
+    # #region agent log
+    cat(jsonlite::toJSON(list(location="klaus.R:411", message="after chatai API call", data=list(provider=provider, model=model, response_length=nchar(response)), timestamp=as.numeric(Sys.time())*1000, sessionId="debug-session", runId="run1", hypothesisId="D"), auto_unbox=TRUE), "\n", file="/Users/cp/Documents/GitHub/klaus/.cursor/debug.log", append=TRUE)
+    # #endregion
     return(response)
   } 
   if (provider == "blablador") {
     if (is.null(model)) model <- "1 - Llama3 405 the best general model and big context size"
+    # Improved: Print message before API call
+    message(glue::glue("Coding data with {provider} / {model}..."))
     response <- tryCatch({
       blablador(
         x = user_prompt,
@@ -406,7 +430,6 @@ parse_codebook <- function(x) {
       stop(glue::glue("Blablador API call failed for model '{model}': {conditionMessage(e)}"), call. = FALSE)
     }
     )
-    message(glue::glue("Coding data with {provider} / {model}..."))
     return(response)
   }
   if (provider == "openwebui") {
@@ -414,6 +437,8 @@ parse_codebook <- function(x) {
       stop("Base URL for Open WebUI API must be provided.", call. = FALSE)
     }
     if (is.null(model)) model <- "llama4:latest"
+    # Improved: Print message before API call
+    message(glue::glue("Coding data with {provider} / {model}..."))
     response <- tryCatch({
       openwebui(
         x = user_prompt,
@@ -427,12 +452,13 @@ parse_codebook <- function(x) {
       stop(glue::glue("Open WebUI API call failed for model '{model}': {conditionMessage(e)}"), call. = FALSE)
     }
     )
-    message(glue::glue("Coding data with {provider} / {model}..."))
     return(response)
   }
   else if (provider %in% providers_tidyllm) {
+    # Improved: Print message before API call for all tidyllm providers
     if (provider == "claude") {
       if (is.null(model)) model <- "claude-3-7-sonnet-20250219"
+      message(glue::glue("Coding data with {provider} / {model}..."))
       response <- tryCatch({
         tidyllm::llm_message(user_prompt, .system_prompt = system_prompt) |> tidyllm::chat(tidyllm::claude(), .temperature = temperature, .model = model) |> tidyllm::get_reply()
       },
@@ -443,6 +469,7 @@ parse_codebook <- function(x) {
     }
     if (provider == "gemini") {
       if (is.null(model)) model <- "gemini-2.0-flash"
+      message(glue::glue("Coding data with {provider} / {model}..."))
       response <- tryCatch({
         tidyllm::llm_message(user_prompt, .system_prompt = system_prompt) |> tidyllm::chat(tidyllm::gemini(), .temperature = temperature, .model = model) |> tidyllm::get_reply()
       },
@@ -453,6 +480,7 @@ parse_codebook <- function(x) {
     }
     if (provider == "openai") {
       if (is.null(model)) model <- "gpt-4o"
+      message(glue::glue("Coding data with {provider} / {model}..."))
       response <- tryCatch({
         tidyllm::llm_message(user_prompt, .system_prompt = system_prompt) |> tidyllm::chat(tidyllm::openai(), .temperature = temperature, .model = model) |> tidyllm::get_reply()
       },
@@ -463,6 +491,7 @@ parse_codebook <- function(x) {
     }
     if (provider == "ollama") {
       if (is.null(model)) model <- "gemma3"
+      message(glue::glue("Coding data with {provider} / {model}..."))
       response <- tryCatch({
         tidyllm::llm_message(user_prompt, .system_prompt = system_prompt) |> tidyllm::chat(tidyllm::ollama(), .temperature = temperature, .model = model) |> tidyllm::get_reply()
       },
@@ -474,7 +503,6 @@ parse_codebook <- function(x) {
     if (is.null(response) || !is.character(response) || length(response) != 1) {
       stop(glue::glue("Unexpected content structure in tidyllm response for model '{model}'. Expected a single character string."), call. = FALSE)
     }
-    message(glue::glue("Coding data with {provider} / {model}..."))
     return(response)
   } else {
     stop(glue::glue("Unsupported API provider specified: '{provider}'"), call. = FALSE)
@@ -495,6 +523,9 @@ code_content <- function(x,
                          drop_json = TRUE,
                          drop_instructions = TRUE,
                          keep_all_original_rows = TRUE) {
+  # #region agent log
+  cat(jsonlite::toJSON(list(location="klaus.R:486", message="code_content function entry", data=list(provider=provider, n_rows=nrow(x), codebook_rows=nrow(codebook), has_base_url=!is.null(base_url)), timestamp=as.numeric(Sys.time())*1000, sessionId="debug-session", runId="run1", hypothesisId="A"), auto_unbox=TRUE), "\n", file="/Users/cp/Documents/GitHub/klaus/.cursor/debug.log", append=TRUE)
+  # #endregion
   
   # Check if provider is supported (can be expanded)
   supported_providers <- c("chatai", "claude", "gemini", "openai", "ollama", "blablador", "openwebui")
@@ -506,6 +537,15 @@ code_content <- function(x,
   if (provider == "openwebui" && is.null(base_url)) {
     stop("The 'base_url' argument must be specified when 'provider' is 'openwebui'.", call. = FALSE)
   }
+  # Improved: Add URL format validation
+  if (provider == "openwebui" && !is.null(base_url)) {
+    if (!grepl("^https?://", base_url)) {
+      stop("The 'base_url' must be a valid URL starting with http:// or https://", call. = FALSE)
+    }
+    # #region agent log
+    cat(jsonlite::toJSON(list(location="klaus.R:536", message="base_url validation check", data=list(base_url=base_url, is_valid_url=TRUE), timestamp=as.numeric(Sys.time())*1000, sessionId="debug-session", runId="run1", hypothesisId="F"), auto_unbox=TRUE), "\n", file="/Users/cp/Documents/GitHub/klaus/.cursor/debug.log", append=TRUE)
+    # #endregion
+  }
   
   # --- Add original row identifier ---
   x <- dplyr::mutate(x, .original_row_id = dplyr::row_number())
@@ -513,16 +553,26 @@ code_content <- function(x,
   codebook_json <- parse_codebook(codebook)
   system_prompt <- paste0(formatting_instructions, "\n\n", codebook_json)
   
-  last_cat <- ""
-  si <- character(0L)
-  for (i in 1:nrow(codebook)) {
-    this_cat <- codebook$category[i]
-    if (this_cat != last_cat) si <- c(si, paste0("# ", codebook$category[i]), "\n")
-    si <- c(si, paste0("*label*: ", codebook$label[i]))
-    si <- c(si, paste0("*instructions*: ", codebook$instructions[i]), "\n")
-    last_cat <- codebook$category[i]
-  }
-  specific_instructions <- paste0(si, collapse = "\n")
+  # #region agent log
+  cat(jsonlite::toJSON(list(location="klaus.R:557", message="before string building", data=list(codebook_rows=nrow(codebook)), timestamp=as.numeric(Sys.time())*1000, sessionId="debug-session", runId="run1", hypothesisId="B"), auto_unbox=TRUE), "\n", file="/Users/cp/Documents/GitHub/klaus/.cursor/debug.log", append=TRUE)
+  # #endregion
+  # Improved: Use vectorized approach while preserving original row-by-row format
+  build_start_time <- Sys.time()
+  # Pre-allocate vector for better performance
+  n_codebook_rows <- nrow(codebook)
+  
+  # Vectorized approach: build all parts at once
+  category_changed <- c(TRUE, codebook$category[-1] != codebook$category[-n_codebook_rows])
+  si_parts <- ifelse(
+    category_changed,
+    paste0("# ", codebook$category, "\n", "*label*: ", codebook$label, "\n", "*instructions*: ", codebook$instructions, "\n"),
+    paste0("*label*: ", codebook$label, "\n", "*instructions*: ", codebook$instructions, "\n")
+  )
+  build_end_time <- Sys.time()
+  # #region agent log
+  cat(jsonlite::toJSON(list(location="klaus.R:571", message="after string building", data=list(build_time_ms=as.numeric((build_end_time - build_start_time) * 1000), si_parts_length=length(si_parts)), timestamp=as.numeric(Sys.time())*1000, sessionId="debug-session", runId="run1", hypothesisId="B"), auto_unbox=TRUE), "\n", file="/Users/cp/Documents/GitHub/klaus/.cursor/debug.log", append=TRUE)
+  # #endregion
+  specific_instructions <- paste0(si_parts, collapse = "\n")
   n_rows <- nrow(x)
   api_results <- vector("list", n_rows) # Pre-allocate list
   
@@ -636,5 +686,8 @@ code_content <- function(x,
   data_coded <- dplyr::distinct(data_coded)
   
   message(glue::glue("Done. Joined results for {nrow(valid_results)} parsed rows.")) # Note: nrow(valid_results) might differ from final nrow
+  # #region agent log
+  cat(jsonlite::toJSON(list(location="klaus.R:639", message="code_content function exit", data=list(final_rows=nrow(data_coded), valid_results=nrow(valid_results)), timestamp=as.numeric(Sys.time())*1000, sessionId="debug-session", runId="run1", hypothesisId="A"), auto_unbox=TRUE), "\n", file="/Users/cp/Documents/GitHub/klaus/.cursor/debug.log", append=TRUE)
+  # #endregion
   return(data_coded)
 }
