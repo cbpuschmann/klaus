@@ -21,7 +21,9 @@ entry in the form `OPENAI_API_KEY="xxxxxxxxxxxx"` to your `.Renviron` file.
 
 ## Usage
 
-The main function of the package is `code_content()` which takes general instructions, formatting instructions, and a codebook as its arguments.
+The main function of the package is `code_content()` which takes general instructions, formatting instructions, and a codebook as its arguments. The function supports multiple LLM providers and handles batch processing of text data.
+
+### Basic Example
 
 First, prepare the general and formatting instructions.
       
@@ -50,7 +52,7 @@ Prepare the codebook. The codebook should be a data frame or tibble with the col
                        "Code this if the sentiment of the tweet is negative", 
                        "Code this if the sentiment of the tweet is neutral"))
   
-Code the data (in this example with gpt-4o)
+Code the data (in this example with gpt-4o, the default OpenAI model)
 
     result <- code_content(data_to_code, general_instructions, formatting_instructions, codebook)
     
@@ -70,7 +72,38 @@ Code the data (in this example with gpt-4o)
 Output the result
 
     result$label
-    [1] "negative" "positive" "negative" "neutral" 
+    [1] "negative" "positive" "negative" "neutral"
+
+### Additional Parameters
+
+The `code_content()` function supports several optional parameters:
+
+- **`provider`**: Choose the LLM provider (default: "openai"). Options: "chatai", "claude", "gemini", "openai", "ollama", "blablador", "openwebui"
+- **`model`**: Specify a model identifier. If NULL, provider-specific defaults are used (see below)
+- **`base_url`**: Required for Open WebUI provider. The base URL of your Open WebUI instance (e.g., "http://localhost:3000")
+- **`temperature`**: Sampling temperature (0 for deterministic output). Default: 0
+- **`sleep`**: Seconds to pause between API calls to avoid rate limits. Default: 0
+- **`drop_json`**: If TRUE (default), removes raw JSON response column from output
+- **`drop_instructions`**: If TRUE (default), removes instructions column from output
+- **`keep_all_original_rows`**: If TRUE (default), includes all original rows even if coding failed (with NA values)
+
+### Default Models by Provider
+
+- **openai**: "gpt-4o"
+- **claude**: "claude-3-7-sonnet-20250219"
+- **gemini**: "gemini-2.0-flash"
+- **ollama**: "gemma3"
+- **chatai**: "meta-llama-3.1-8b-instruct"
+- **blablador**: "1 - Llama3 405 the best general model and big context size"
+- **openwebui**: "llama4:latest"
+
+### Error Handling
+
+The function handles API errors gracefully:
+- If an API call fails for a specific row, a warning is issued
+- Failed rows are marked with NA values in coded columns (if `keep_all_original_rows = TRUE`)
+- The function continues processing remaining rows even if some fail
+- JSON parsing errors are caught and logged with warnings 
 
 ## Coding with the ChatAI API
 
@@ -100,7 +133,7 @@ For convenience, the `blablador_models()` function lists all models available vi
 
 ## Coding with the Open WebUI API
 
-Open WebUI can be specified as the API to use with the *provider* parameter. In the example below, we specify use of Open WebUI as provider and Llama4 as the model. In addition to the usual arguments, for using Open WebUI, you also need to specify a `base_url`. If you are running Open WebUI locally, this is likely to be `http://localhost:3000`. If your institution is hosting an instance, you will need to specify the URL of that instance.
+Open WebUI can be specified as the API to use with the *provider* parameter. In the example below, we specify use of Open WebUI as provider and Llama4 as the model. **The `base_url` parameter is required** when using Open WebUI. If you are running Open WebUI locally, this is typically `http://localhost:3000`. If your institution is hosting an instance, you will need to specify the URL of that instance. The URL must start with `http://` or `https://`.
 
     coded_data_openwebui <- code_content(data_to_code, 
                                       general_instructions, 
@@ -110,11 +143,13 @@ Open WebUI can be specified as the API to use with the *provider* parameter. In 
                                       model = "llama4:latest",
                                       base_url = "http://localhost:3000")
 
-For convenience, the `openwebui_models()` function lists all models available via the Open WebUI API of your installation/instance. Please note that you also need to specify the `base_url` argument when using this function.
+For convenience, the `openwebui_models()` function lists all models available via the Open WebUI API of your installation/instance. **You must also specify the `base_url` argument** when using this function:
+
+    models <- openwebui_models(base_url = "http://localhost:3000")
 
 ## Coding with ollama
 
-Coding with ollama requires having [ollama](https://ollama.com/) and the model you would like to use installed. 
+Coding with ollama requires having [ollama](https://ollama.com/) installed and running locally, and the model you would like to use must be installed. No API key is required for ollama. 
 
     coded_data_ollama <- code_content(data_to_code, 
                                       general_instructions, 
@@ -123,8 +158,29 @@ Coding with ollama requires having [ollama](https://ollama.com/) and the model y
                                       provider = "ollama",
                                       model = "llama3.1")
 
+To see available models, use `ollama list` in your terminal, or check the tidyllm package documentation.
+
 
 
 ## Prompting
 
 Note that while adjusting the instructions to your specific use case is essential, the remaining generic instructions should largely remain unchanged to ensure that the API responds with parseable results.
+
+### Tips for Best Results
+
+1. **Be explicit about JSON format**: The `formatting_instructions` should clearly specify the expected JSON structure
+2. **Include examples**: When possible, include examples of the desired output format in your instructions
+3. **Use consistent terminology**: Use the same terms in your codebook and instructions
+4. **Test with a small sample**: Before processing large datasets, test with a few rows to verify the output format
+5. **Handle rate limits**: Use the `sleep` parameter to add delays between API calls if you encounter rate limiting
+6. **Monitor progress**: The function prints progress messages showing which row is being processed
+
+## Troubleshooting
+
+### Common Issues
+
+- **API key errors**: Ensure your API key environment variable is set correctly. Restart R after setting environment variables.
+- **JSON parsing errors**: Check that your `formatting_instructions` clearly specify the JSON structure. The function extracts JSON using pattern matching, so responses may include additional text.
+- **Empty results**: If `keep_all_original_rows = FALSE` and all rows fail, the function returns an empty data frame. Check warnings for error messages.
+- **Open WebUI connection errors**: Verify that `base_url` is correct and that your Open WebUI instance is running and accessible.
+- **Rate limiting**: If you encounter rate limits, increase the `sleep` parameter to add delays between API calls.
