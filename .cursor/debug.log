@@ -1,0 +1,11 @@
+{"location":"klaus.R:486","message":"code_content function entry","data":{"provider":"openai","n_rows":100,"codebook_rows":3,"has_base_url":false},"timestamp":1768343973918.949,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"} 
+{"location":"klaus.R:557","message":"before string building","data":{"codebook_rows":3},"timestamp":1768343973923.7339,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"} 
+{"location":"klaus.R:571","message":"after string building","data":{"build_time_ms":0.0441,"si_parts_length":3},"timestamp":1768343973924.3621,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"} 
+{"location":"klaus.R:486","message":"code_content function entry","data":{"provider":"openai","n_rows":100,"codebook_rows":3,"has_base_url":false},"timestamp":1768344104269.043,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"} 
+{"location":"klaus.R:557","message":"before string building","data":{"codebook_rows":3},"timestamp":1768344104275.2632,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"} 
+{"location":"klaus.R:571","message":"after string building","data":{"build_time_ms":0.0629,"si_parts_length":3},"timestamp":1768344104275.9531,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"} 
+{"location":"klaus.R:639","message":"code_content function exit","data":{"final_rows":100,"valid_results":100},"timestamp":1768344212291.0991,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"} 
+{"location":"klaus.R:486","message":"code_content function entry","data":{"provider":"openai","n_rows":1000,"codebook_rows":3,"has_base_url":false},"timestamp":1768344802594.4751,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"} 
+{"location":"klaus.R:557","message":"before string building","data":{"codebook_rows":3},"timestamp":1768344802597.1731,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"} 
+{"location":"klaus.R:571","message":"after string building","data":{"build_time_ms":0.0262,"si_parts_length":3},"timestamp":1768344802597.521,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"} 
+{"location":"klaus.R:639","message":"code_content function exit","data":{"final_rows":1000,"valid_results":1000},"timestamp":1768345744577.6218,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"} 
